@@ -3,6 +3,7 @@ import {BehaviorSubject, EMPTY, Observable, switchMap, tap, timeout} from "rxjs"
 import {HttpClient} from "@angular/common/http";
 import {TokenModel} from "./model/token.model";
 import {environment} from "../../environments/environment";
+import {Router} from "@angular/router";
 
 @Injectable({
   providedIn: 'root'
@@ -16,7 +17,7 @@ export class AuthService {
     return this._isLoginIn.asObservable();
   }
 
-  constructor(private client: HttpClient) {
+  constructor(private client: HttpClient, private router: Router) {
     const token = AuthService.getLocalAccessToken();
     if (token && token.hasNotExpired()) {
       this._isLoginIn.next(true);
@@ -53,6 +54,7 @@ export class AuthService {
     if (this.tokenExpirationTimer) {
       clearTimeout(this.tokenExpirationTimer);
       this.tokenExpirationTimer = null;
+      this.router.navigate(['login']);
     }
   }
 
