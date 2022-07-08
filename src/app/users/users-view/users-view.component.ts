@@ -5,7 +5,6 @@ import {switchMap} from "rxjs";
 import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {ToastrService} from "ngx-toastr";
 
-
 export interface DialogData {
   id: number;
   email: string;
@@ -21,42 +20,45 @@ export class UsersViewComponent implements OnInit {
 
   displayedColumns: string[] = ['id', 'email', 'edit', 'delete'];
   dataSource: UserType [] = [];
+  currentUser?: UserType;
 
   constructor(private userService: UsersService, public dialog: MatDialog, private toastr: ToastrService) {
   }
 
   ngOnInit(): void {
     this.userService.fetchUsers().subscribe(users => this.dataSource = users);
+    this.userService.getCurrentUser().subscribe(user => this.currentUser = user);
   }
 
   onAdd(email: string, password: string) {
     this.userService.add(email, password)
       .pipe(switchMap(() => this.userService.fetchUsers()))
-      .subscribe({
-        next: users => this.dataSource = users, error: (error) => {
-          console.log(error.error);
-          this.toastr.error(error.error)
-        }
-      });
+      .subscribe({ next: users => this.dataSource = users, error: this.handleErrors.bind(this)});
   }
 
   onDelete(id: number): void {
-    this.userService.delete(id)
-      .subscribe({
-        complete: () => this.userService.fetchUsers()
-          .subscribe(users => this.dataSource = users),
-        error: err => {
-          this.toastr.error(err.error);
-        }
-      });
+    if (id === this.currentUser?.id) {
+      this.toastr.warning("Cannot delete current user due to security reasons")
+    } else {
+      this.userService.delete(id)
+        .subscribe({
+          complete: () => this.userService.fetchUsers()
+            .subscribe(users => this.dataSource = users),
+          error: this.handleErrors.bind(this)
+        });
+    }
   }
 
   onEdit(id: number, email: string): void {
-    this.openDialog(id, email);
+    if (id === this.currentUser?.id) {
+      this.toastr.warning("Cannot edit current user due to security reasons")
+    } else {
+      this.openDialog(id, email);
+    }
   }
 
   openDialog(id: number, email: string): void {
-    const dialogRef = this.dialog.open(DialogOverviewExampleDialog, {
+    const dialogRef = this.dialog.open(EditUserDialog, {
       width: '350px',
       data: {id, email, password: ""},
     });
@@ -68,24 +70,30 @@ export class UsersViewComponent implements OnInit {
           .subscribe({
             next: (users) => {
               this.dataSource = users
-            }, error: (error) => {
-              this.toastr.error(error.error)
-            }
+            }, error: this.handleErrors.bind(this)
           });
       }
     });
+  }
+
+  private handleErrors(error: any) {
+    if (typeof error.error === 'string') {
+      this.toastr.error(error.error);
+    } else {
+      this.toastr.error("Something went wrong, please contact the support");
+    }
   }
 }
 
 
 @Component({
   selector: 'dialog-overview-example-dialog',
-  templateUrl: './dialog-overview-example-dialog.html',
+  templateUrl: './edit-user-dialog.html',
 })
-export class DialogOverviewExampleDialog {
+export class EditUserDialog {
 
   constructor(
-    public dialogRef: MatDialogRef<DialogOverviewExampleDialog>,
+    public dialogRef: MatDialogRef<EditUserDialog>,
     @Inject(MAT_DIALOG_DATA) public data: DialogData
   ) {
   }
