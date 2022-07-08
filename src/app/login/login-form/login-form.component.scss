@@ -1,0 +1,26 @@
+.center {
+  margin-left: auto;
+  margin-right: auto;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.card-size-large {
+  width: 20rem;
+  height: 25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+}
+
+.input-margin {
+  margin-bottom: 1em;
+
+  &.submit-button {
+    display: flex;
+    justify-content: end;
+  }
+}
